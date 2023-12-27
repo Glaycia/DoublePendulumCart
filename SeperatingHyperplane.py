@@ -6,12 +6,13 @@ def seperating_hyperplane():
 
     size = 10
     # Random Convex Hull
+    np.random.seed(2)
     hull_points = size * np.random.rand(25, 2)
     centerpoint = np.array([size/2, size/2])
     
     point_position = problem.decision_variable(2)
     # Initial Guess
-    point_position[0:2, 0] = 0
+    point_position[0:2, 0].set_value(0)
 
     # Seperating Hyperplane
     norm_vector = problem.decision_variable(2)
@@ -19,7 +20,7 @@ def seperating_hyperplane():
 
     # problem.subject_to(norm_vector > -1)
     # problem.subject_to(norm_vector < 1)
-    problem.subject_to(norm_vector.T @ point_position + b > 0.001)
+    problem.subject_to(norm_vector.T @ point_position + b > 0)
 
     for index in range(len(hull_points)):
         problem.subject_to(norm_vector.T @ hull_points[index] + b < 0)

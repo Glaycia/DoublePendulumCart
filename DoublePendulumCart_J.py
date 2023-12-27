@@ -42,34 +42,18 @@ def DoublePendulumCartDynamics(X = VariableMatrix, U = VariableMatrix):
 
     u = U[0, 0]
 
-    cos_theta1 = theta1.cwise_transform(autodiff.cos)
-    cos_theta2 = theta2.cwise_transform(autodiff.cos)
-    cos_thetadiff = (theta1 - theta2).cwise_transform(autodiff.cos)
-
     M = np.empty((3, 3))
     M[0, 0] = m_c + m_p1 + m_p2
-    M[0, 1] = l_1 * (m_p1 + m_p2) * math.cos(theta1)
-    M[0, 2] = l_2 * m_p2 * math.cos(theta2)
+    M[0, 1] = l_1 * (m_p1 + m_p2) * autodiff.cos(theta1)
+    M[0, 2] = l_2 * m_p2 * autodiff.cos(theta2)
 
-    M[1, 0] = l_1 * (m_p1 + m_p2) * math.cos(theta1)
+    M[1, 0] = l_1 * (m_p1 + m_p2) * autodiff.cos(theta1)
     M[1, 1] = I_1 + l_1**2 * (m_p1 + m_p2)
-    M[1, 2] = l_1 * l_2 * m_p2 * math.cos(theta1 - theta2)
+    M[1, 2] = l_1 * l_2 * m_p2 * autodiff.cos(theta1 - theta2)
 
-    M[2, 0] = l_2 * m_p2 * math.cos(theta2)
-    M[2, 1] = l_1 * l_2 * m_p2 * math.cos(theta1 - theta2)
+    M[2, 0] = l_2 * m_p2 * autodiff.cos(theta2)
+    M[2, 1] = l_1 * l_2 * m_p2 * autodiff.cos(theta1 - theta2)
     M[2, 2] = I_2 + l_2**2 * m_p2
-
-    # M[0, 0] = m_c + m_p1 + m_p2
-    # M[0, 1] = l_1 * (m_p1 + m_p2) * cos_theta1
-    # M[0, 2] = l_2 * m_p2 * theta2
-
-    # M[1, 0] = l_1 * (m_p1 + m_p2) * theta1
-    # M[1, 1] = I_1 + l_1**2 * (m_p1 + m_p2)
-    # M[1, 2] = l_1 * l_2 * m_p2 * cos_thetadiff
-
-    # M[2, 0] = l_2 * m_p2 * cos_theta2
-    # M[2, 1] = l_1 * l_2 * m_p2 * cos_thetadiff
-    # M[2, 2] = I_2 + l_2**2 * m_p2
 
     # M_Adj = np.empty((3, 3))
 
@@ -85,26 +69,26 @@ def DoublePendulumCartDynamics(X = VariableMatrix, U = VariableMatrix):
     # M_Adj[2, 1] = -(M.T[0, 0] * M.T[1, 2] - M.T[1, 0] * M.T[0, 2])
     # M_Adj[2, 2] = (M.T[0, 0] * M.T[1, 1] - M.T[1, 0] * M.T[0, 1])
 
-    # Minv = M_Adj / (M_Adj[0, 0] + M_Adj[0, 1] + M_Adj)
+    # Minv = M_Adj / (M_Adj[0, 0] + M_Adj[0, 1] + M_Adj[0, 2])
 
     Minv = np.linalg.inv(M)
 
     F = np.empty((3, 1))
 
-    # F[0, 0] = (l_1 * (m_p1 + m_p2) * theta1_dot**2 * math.sin(theta1) + m_p2 * l_2 * theta2_dot**2 * math.sin(theta2)) - d_c * x_dot + u
-    # F[1, 0] = (-l_1 * l_2 * m_p2 * theta2_dot**2 * math.sin(theta1 - theta2) + g * (m_p1 + m_p2) * l_1 * math.sin(theta1)) - d_p1 * theta1_dot
-    # F[2, 0] = (l_1 * l_2 * m_p2 * theta2_dot**2 * math.sin(theta1 - theta2) + g * l_2 * m_p2 * math.sin(theta2)) - d_p2 * theta2_dot
+    F[0, 0] = (l_1 * (m_p1 + m_p2) * theta1_dot**2 * math.sin(theta1) + m_p2 * l_2 * theta2_dot**2 * math.sin(theta2)) - d_c * x_dot + u
+    F[1, 0] = (-l_1 * l_2 * m_p2 * theta2_dot**2 * math.sin(theta1 - theta2) + g * (m_p1 + m_p2) * l_1 * math.sin(theta1)) - d_p1 * theta1_dot
+    F[2, 0] = (l_1 * l_2 * m_p2 * theta2_dot**2 * math.sin(theta1 - theta2) + g * l_2 * m_p2 * math.sin(theta2)) - d_p2 * theta2_dot
 
-    sin_theta1 = theta1.cwise_transform(autodiff.sin)
-    sin_theta2 = theta2.cwise_transform(autodiff.sin)
-    sin_thetadiff = (theta1 - theta2).cwise_transform(autodiff.sin)
+    # sin_theta1 = theta1.cwise_transform(autodiff.sin)
+    # sin_theta2 = theta2.cwise_transform(autodiff.sin)
+    # sin_thetadiff = (theta1 - theta2).cwise_transform(autodiff.sin)
 
-    F[0, 0] = (l_1 * (m_p1 + m_p2) * theta1_dot**2 * sin_theta1 + m_p2 * l_2 * theta2_dot**2 * sin_theta2) - d_c * x_dot + u
-    F[1, 0] = (-l_1 * l_2 * m_p2 * theta2_dot**2 * sin_thetadiff + g * (m_p1 + m_p2) * l_1 * sin_theta1) - d_p1 * theta1_dot
-    F[2, 0] = (l_1 * l_2 * m_p2 * theta2_dot**2 * sin_thetadiff + g * l_2 * m_p2 * sin_theta2) - d_p2 * theta2_dot
+    # F[0, 0] = (l_1 * (m_p1 + m_p2) * theta1_dot**2 * sin_theta1 + m_p2 * l_2 * theta2_dot**2 * sin_theta2) - d_c * x_dot + u
+    # F[1, 0] = (-l_1 * l_2 * m_p2 * theta2_dot**2 * sin_thetadiff + g * (m_p1 + m_p2) * l_1 * sin_theta1) - d_p1 * theta1_dot
+    # F[2, 0] = (l_1 * l_2 * m_p2 * theta2_dot**2 * sin_thetadiff + g * l_2 * m_p2 * sin_theta2) - d_p2 * theta2_dot
 
     X_dot = np.empty((6, 1))
-    X_dot[:3, 0] = X[:3, :]
+    X_dot[:3, 0] = X[3:, :]
     X_dot[3:, 0] = (Minv @ F)[:, 0]
 
     return X_dot

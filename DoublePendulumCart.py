@@ -93,9 +93,10 @@ def direct_transcription():
     problem.set_initial(X[1, :], np.linspace(theta1_init, theta1_final, N + 1))
     problem.set_initial(X[2, :], np.linspace(theta2_init, theta2_final, N + 1))
 
-    
+    # Control Variable    
     U = problem.variable(1, N)
 
+    # Initial constraints
     problem.subject_to(X[0, 0] == d_init)
     problem.subject_to(X[1, 0] == theta1_init)
     problem.subject_to(X[2, 0] == theta2_init)
@@ -104,6 +105,7 @@ def direct_transcription():
     problem.subject_to(X[4, 0] == 0)
     problem.subject_to(X[5, 0] == 0)
     
+    # Final Constraints
     problem.subject_to(X[0, N] == d_final)
     problem.subject_to(X[1, N] == theta1_final)
     problem.subject_to(X[2, N] == theta2_final)
@@ -112,9 +114,11 @@ def direct_transcription():
     problem.subject_to(X[4, N] == 0)
     problem.subject_to(X[5, N] == 0)
 
+    # Rail dimension constraint
     problem.subject_to(X[0, :] >= d_min)
     problem.subject_to(X[0, :] <= d_max)
 
+    # Maximum control input constraint
     problem.subject_to(U >= -u_max)
     problem.subject_to(U <= u_max)
 
@@ -132,7 +136,7 @@ def direct_transcription():
         # J += (theta1_final - X[1, 0])**2
         # J += (theta2_final - X[2, 0])**2
 
-        J += 10 * U[0, 0]**2
+        J += U[0, 0]**2
     
     problem.minimize(J)
 
@@ -146,7 +150,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
-def plot_cart_pole(ax, X, U, length=0.5):
+prev_positions_1 = []
+prev_positions_2 = []
+
+def plot_cart_pole(ax, X, U, length=0.5, trace_length=30):
     """
     Plot cart-pole system.
     """
@@ -155,6 +162,23 @@ def plot_cart_pole(ax, X, U, length=0.5):
     pole_width = 0.02
     pole_length = length
 
+    if trace_length > 1:
+        prev_positions_1.append((X[0] + pole_length * np.sin(X[1]), pole_length * np.cos(X[1])))
+        prev_positions_2.append((X[0] + pole_length * np.sin(X[1]) + pole_length * np.sin(X[2]), pole_length * np.cos(X[1]) + pole_length * np.cos(X[2])))
+        
+        if len(prev_positions_1) > trace_length:
+            prev_positions_1.pop(0)
+            prev_positions_2.pop(0)
+
+        for i in range(1, len(prev_positions_1)):
+            alpha = 1 # (1.0 - i / len(prev_positions_1))/2
+            # ax.plot([prev_positions_1[i - 1][0], prev_positions_1[i][0]],
+            #         [prev_positions_1[i - 1][1], prev_positions_1[i][1]],
+            #         color='grey', alpha=alpha)
+            ax.plot([prev_positions_2[i - 1][0], prev_positions_2[i][0]],
+                    [prev_positions_2[i - 1][1], prev_positions_2[i][1]],
+                    color='grey', alpha=alpha)
+    
     # Cart
     cart_x = X[0] - cart_width / 2
     ax.add_patch(plt.Rectangle((cart_x, -cart_height), cart_width, cart_height, color='blue'))
